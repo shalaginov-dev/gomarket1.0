@@ -1,31 +1,33 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
+	"log"
+
+	"github.com/gin-gonic/gin"
+	"gomarket1.0/internal/config"
 )
 
 type Health struct {
 	Status string `json:"status"`
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
+func healthHandler(c *gin.Context) {
 	health := Health{Status: "ok"}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(health); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	c.JSON(200, health)
 }
 
 func main() {
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+	r := gin.Default()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", healthHandler)
+	r.GET("/health", healthHandler)
 
-	fmt.Println("Server started on :8081")
-	if err := http.ListenAndServe(":8081", mux); err != nil {
+	if err := r.Run(":" + cfg.Port); err != nil {
 		fmt.Println("Server failed:", err)
 	}
 }
